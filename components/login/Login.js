@@ -1,12 +1,53 @@
 "use client";
 import React, { useState } from "react";
-import { Input, Button } from "antd";
+import { Input, Button, message } from "antd";
 import { MailOutlined, LockOutlined } from "@ant-design/icons";
 import Image from "next/image";
 import Link from "next/link";
-
+import axios from "axios";
+import '@ant-design/v5-patch-for-react-19';
+import { useRouter } from "next/navigation";
 export default function Login() {
-  const [passwordVisible, setPasswordVisible] = useState(false);
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [loading, setLoading] = useState(false);
+
+  // Handle input change
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Handle login submission
+  const handleLogin = async () => {
+    if (!formData.email || !formData.password) {
+      message.error("Email and password are required!");
+      return;
+    }
+  
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        "http://3.7.71.35:3001/api/admin/login-email",
+        formData
+      );
+      message.success(response.data.message || "Login successful!");
+      setFormData({ email: "", password: "" });
+  
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token); // Store token in localStorage
+      }
+  
+      router.push("/manage-user");
+    } catch (error) {
+      message.error(error.response?.data?.message || "Login failed!");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
 
   return (
     <div className="flex h-screen">
@@ -40,9 +81,13 @@ export default function Login() {
           <div className="mb-4">
             <Input
               size="large"
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
               placeholder="Email"
               prefix={<MailOutlined className="text-gray-400" />}
-              className="rounded-lg bg-gray-700  border-gray-600 placeholder-gray-400"
+              className="rounded-lg bg-gray-700 border-gray-600 placeholder-gray-400"
             />
           </div>
 
@@ -50,16 +95,12 @@ export default function Login() {
           <div className="mb-4">
             <Input.Password
               size="large"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
               placeholder="Password"
               prefix={<LockOutlined className="text-gray-400" />}
-              iconRender={(visible) =>
-                visible ? (
-                  <LockOutlined className="text-gray-400" />
-                ) : (
-                  <LockOutlined className="text-gray-400" />
-                )
-              }
-              className="rounded-lg bg-gray-700  border-gray-600 placeholder-gray-400"
+              className="rounded-lg bg-gray-700 border-gray-600 placeholder-gray-400"
               visibilityToggle
             />
           </div>
@@ -69,9 +110,11 @@ export default function Login() {
             type="primary"
             size="large"
             block
+            loading={loading}
+            onClick={handleLogin}
             className="mb-3 bg-blue-500 hover:bg-blue-600 border-none rounded-lg"
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </Button>
 
           {/* Signup Link */}
