@@ -118,12 +118,12 @@ export default function Login() {
           </Button>
 
           {/* Signup Link */}
-          <p className="text-center text-gray-400">
+          {/* <p className="text-center text-gray-400">
             Not registered?{" "}
             <Link href="/signup" className="text-blue-400 hover:underline">
               Sign up
-            </Link>
-          </p>
+            </Link> */}
+          {/* </p> */}
         </div>
       </div>
     </div>

@@ -37,24 +37,34 @@ export default function ManageUser() {
       message.error("You need to log in again!");
       return;
     }
-
+  
     const actionUrls = {
       block: `http://3.7.71.35:3001/api/users/block/${userId}`,
       unblock: `http://3.7.71.35:3001/api/users/unblock/${userId}`,
       suspend: `http://3.7.71.35:3001/api/users/suspend/${userId}`,
       unsuspend: `http://3.7.71.35:3001/api/users/unsuspend/${userId}`,
     };
-
+  
     const actionKey = isActive ? `un${actionType}` : actionType;
-
+  
     setLoadingAction(userId + actionType);
-
+  
     try {
-      await axios.post(actionUrls[actionKey], {}, { headers: { Authorization: `Bearer ${token}` } });
-      message.success(`User ${actionKey}ed successfully!`);
-      fetchUsers();
+      const response = await axios.post(
+        actionUrls[actionKey],
+        {}, // Ensure the request body is not empty if required
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.status === 200) {
+        message.success(`User ${actionKey}ed successfully!`);
+        fetchUsers(); // Refresh user list
+      } else {
+        message.error(`Unexpected response: ${response.statusText}`);
+      }
     } catch (error) {
-      message.error(`Failed to ${actionKey} user!`);
+      console.error("API Error:", error.response?.data || error.message);
+      message.error(`Failed to ${actionKey} user! ${error.response?.data?.message || ""}`);
     } finally {
       setLoadingAction(null);
     }
@@ -73,7 +83,6 @@ export default function ManageUser() {
 
   const columns = [
     { title: "Mobile number", dataIndex: "mobileno", key: "mobileno" },
-    // { title: "Email", dataIndex: "email", key: "email" },
     {
       title: "Status",
       dataIndex: "blocked",
@@ -83,8 +92,8 @@ export default function ManageUser() {
           type="primary"
           className={`px-4 py-2 rounded-md transition-all 
             ${blocked ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}`}
-          loading={loadingAction === record.id + "block"}
-          onClick={() => confirmAction(record.id, "block", blocked)}
+          loading={loadingAction === record.id + (blocked ? "unblock" : "block")}
+          onClick={() => confirmAction(record.id, blocked ? "unblock" : "block", blocked)}
         >
           {blocked ? "Unblock" : "Block"}
         </Button>
@@ -99,8 +108,8 @@ export default function ManageUser() {
           type="primary"
           className={`px-4 py-2 rounded-md transition-all 
             ${suspended ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-600 hover:bg-blue-700"}`}
-          loading={loadingAction === record.id + "suspend"}
-          onClick={() => confirmAction(record.id, "suspend", suspended)}
+          loading={loadingAction === record.id + (suspended ? "unsuspend" : "suspend")}
+          onClick={() => confirmAction(record.id, suspended ? "unsuspend" : "suspend", suspended)}
         >
           {suspended ? "Unsuspend" : "Suspend"}
         </Button>
